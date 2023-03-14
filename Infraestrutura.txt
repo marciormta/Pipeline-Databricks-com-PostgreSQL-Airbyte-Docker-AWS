@@ -1,0 +1,86 @@
+Criando Container e Imagem no Docker:
+
+docker run --name NOME_AQUI -p 5432:5432 -e POSTGRES_USER=dbadmin -e POSTGRES_PASSWORD=dbadmin123 -e POSTGRES_DB=postgresNOMEAQUI -d postgres
+
+Carregando dados:
+
+CREATE SCHEMA dbadmin AUTHORIZATION dbadmin;
+
+# Cria tabela
+CREATE TABLE dbadmin.tb_usuarios
+(
+    id_usuario integer NOT NULL,
+    nome_usuario character varying(50),
+    cod_cidade character varying(5),
+    PRIMARY KEY (id_usuario)
+);
+
+# Cria tabela
+CREATE TABLE dbadmin.tb_cidades
+(
+    codigo_cidade character varying(5),
+    nome_cidade character varying(50),
+    PRIMARY KEY (codigo_cidade)
+);
+
+# Carrega dados
+INSERT INTO dbadmin.tb_cidades(codigo_cidade, nome_cidade)
+VALUES ('FOR01', 'Fortaleza');
+
+INSERT INTO dbadmin.tb_cidades(codigo_cidade, nome_cidade)
+VALUES ('BLU01', 'Blumenau');
+
+INSERT INTO dbadmin.tb_cidades(codigo_cidade, nome_cidade)
+VALUES ('UBA01', 'Ubatuba');
+
+INSERT INTO dbadmin.tb_usuarios(id_usuario, nome_usuario, cod_cidade)
+VALUES (1001, 'Bob Silva', 'BLU01');
+
+INSERT INTO dbadmin.tb_usuarios(id_usuario, nome_usuario, cod_cidade)
+VALUES (1002, 'Monica Teixeira', 'BLU01');
+
+INSERT INTO dbadmin.tb_usuarios(id_usuario, nome_usuario, cod_cidade)
+VALUES (1003, 'Josenildo Farias', 'FOR01');
+
+INSERT INTO dbadmin.tb_usuarios(id_usuario, nome_usuario, cod_cidade)
+VALUES (1004, 'Maria Joy', 'UBA01');
+
+INSERT INTO dbadmin.tb_usuarios(id_usuario, nome_usuario, cod_cidade)
+VALUES (1005, 'Alex Tavares', 'FOR01');
+
+# Cria chave estrangeira
+ALTER TABLE dbadmin.tb_usuarios
+    ADD CONSTRAINT "FK_CIDADE" FOREIGN KEY (cod_cidade)
+    REFERENCES dbadmin.tb_cidades (codigo_cidade)
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+Instala o Airbyte:
+git clone https://github.com/airbytehq/airbyte.git
+cd airbyte
+docker-compose u
+
+Analytics
+
+# Lista o conteúdo
+dbutils.fs.ls("s3://projeto5-dsa-analytics/dados/dbadmin/")
+
+# Carrega os dados em um dataframe do Spark
+df = spark.read.load("s3://projeto5-dsa-analytics/dados/dbadmin/p5_tb_usuarios")
+
+# Visualiza os dados
+display(df) 
+
+# Executa query SQL
+%sql
+SELECT nome_usuario, nome_cidade
+FROM dbadmin.p5_tb_usuarios, dbadmin.p5_tb_cidades
+WHERE dbadmin.p5_tb_cidades.codigo_cidade = dbadmin.p5_tb_usuarios.cod_cidade;
+
+# Executa query SQL
+%sql
+SELECT nome_cidade, COUNT(*)
+FROM dbadmin.p5_tb_usuarios, dbadmin.p5_tb_cidades
+WHERE dbadmin.p5_tb_cidades.codigo_cidade = dbadmin.p5_tb_usuarios.cod_cidade
+GROUP BY nome_cidade;
+
